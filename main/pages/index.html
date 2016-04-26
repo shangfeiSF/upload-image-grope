@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>FormData Submit</title>
+    <style>
+        input {
+            display: block;
+        }
+        .img-wrap img{
+            width: 200px;
+            height: 200px;
+            margin-right: 20px;
+        }
+    </style>
+    <script type="text/javascript" src="http://localhost:8080/jquery.js"></script>
+</head>
+<body>
+<h2>FormData Submit</h2>
+<form>
+    <input id="J_name" type="text" name="name" value="formdata---1">
+    <input id="J_authority" type="text" name="authority" value="admin">
+    <input id="J_files" type="file" name="files" value="admin" multiple>
+    <input id="J_submit" type="button" value="提交">
+    <div id="J_response"></div>
+</form>
+<script type="text/javascript">
+    var inputFiles = null
+
+    $('#J_files').on('change', function (e) {
+        inputFiles = (this.files && this.files.length) ? this.files : e.target.value
+    })
+
+    $('#J_submit').on('click', function () {
+        if (inputFiles.lentgh == 0) return
+
+        var formData = new FormData()
+        formData.append('name', $('#J_name').val())
+        formData.append('authority', $('#J_authority').val())
+
+        $.each(inputFiles, function (index, file) {
+            formData.append('files', file)
+        })
+
+        $.ajax({
+            type: 'post',
+            url: '/users/formdata',
+            contentType: false,
+            processData: false,
+            data: formData,
+            success: function (data) {
+                var linkDoms = $.map(data.links, function (link, index) {
+                    var linkDom = $('<a></a>')
+                    linkDom.addClass('img-wrap')
+                    linkDom.attr('href', link.url)
+                    linkDom.attr('target', '_blank')
+                    linkDom.attr('data-index', index)
+                    linkDom.append($('<img src="' + link.url + '" />'))
+                    return linkDom
+                })
+                $('#J_response').append(linkDoms)
+            }
+        })
+    })
+</script>
+</body>
+</html>
