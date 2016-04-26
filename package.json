@@ -1,0 +1,28 @@
+{
+  "name": "upload-image-grope",
+  "version": "1.0.0",
+  "description": "JavaScript, Nodejs, MltipleImage, Upload, Express, GraphicsMagick, demo",
+  "dependencies": {
+    "bluebird": "^3.3.4",
+    "colors": "^0.6.2",
+    "express": "^4.13.4",
+    "multiparty": "^4.1.2",
+    "body-parser": "^1.15.0",
+    "gm": "^1.22.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:shangfeiSF/upload-image-grope.git"
+  },
+  "keywords": [
+    "JavaScript",
+    "Nodejs",
+    "MltipleImage",
+    "Upload",
+    "Express",
+    "GraphicsMagick",
+    "demo"
+  ],
+  "author": "shangfeiSF",
+  "license": "ISC"
+}
