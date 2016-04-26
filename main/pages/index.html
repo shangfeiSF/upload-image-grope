@@ -2,18 +2,21 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>FormData Submit</title>
+    <title>Multiple Image Upload</title>
     <style>
         input {
             display: block;
         }
-        .img-wrap img{
+
+        .img-wrap img {
             width: 200px;
             height: 200px;
             margin-right: 20px;
         }
     </style>
     <script type="text/javascript" src="http://localhost:8080/jquery.js"></script>
+    <script type="text/javascript" src="http://localhost:8080/underscore.js"></script>
+    <script type="text/javascript" src="http://localhost:8080/upload/upload.js"></script>
 </head>
 <body>
 <h2>FormData Submit</h2>
@@ -44,7 +47,7 @@
 
         $.ajax({
             type: 'post',
-            url: '/users/formdata',
+            url: '/upload/images',
             contentType: false,
             processData: false,
             data: formData,

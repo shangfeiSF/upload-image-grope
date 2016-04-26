@@ -1,12 +1,10 @@
 #!/usr/bin/env node
+var fs = require('fs')
+var path = require('path')
 var Promise = require("bluebird")
 
-var fs = require('fs')
-Promise.promisifyAll(fs)
-var path = require('path')
-
-var util = require('util')
 var colors = require('colors')
+Promise.promisifyAll(fs)
 
 fs.readdirAsync(path.join(__dirname, 'asset/images'))
   .then(function (files) {
@@ -15,40 +13,31 @@ fs.readdirAsync(path.join(__dirname, 'asset/images'))
     })
 
     if (images.length == 0) {
-      console.log(('None images(*.jpg or *.png) need sweep').yellow)
-      return
+      console.log('None images(*.jpg or *.png) need sweep'.yellow)
+      return []
+    } else {
+      console.log('Sweep Begin'.green)
+      return images
     }
+  })
+  .reduce(function (census, image, index) {
+    var file = path.join(__dirname, 'asset/images', image)
 
-    console.log('Sweep Begin'.green)
-    console.log(('[Directory] --- ' + path.join(__dirname, 'asset/images')).yellow)
-    var censusInit = []
-
-    Promise.reduce(images, function (census, image, index) {
-        var file = path.join(__dirname, 'asset/images', image)
-
-        return fs.statAsync(file)
-          .then(function (stats) {
-            census.push({
-              index: index,
-              name: image,
-              size: stats.size,
-              ext: path.extname(image)
-            })
-
-            return fs.unlinkAsync(file)
-          })
-          .then(function () {
-            console.log(('[File] --- ' + image).red)
-            return census
-          })
-      }, censusInit)
-      .then(function (census) {
-        console.log('Sweep End'.green)
-        console.log((
-          util.inspect(census, {
-            showHidden: false,
-            depth: null
-          })
-        ).yellow)
+    return fs.statAsync(file)
+      .then(function (stats) {
+        census.push({
+          index: index,
+          name: image,
+          size: stats.size,
+          ext: path.extname(image)
+        })
+        return fs.unlinkAsync(file)
       })
+      .then(function () {
+        console.log(('[File] --- ' + image).red)
+        return census
+      })
+  }, [])
+  .then(function (census) {
+    console.log('Sweep End'.green)
   })
