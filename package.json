@@ -4,11 +4,12 @@
   "description": "JavaScript, Nodejs, MltipleImage, Upload, Express, GraphicsMagick, demo",
   "dependencies": {
     "bluebird": "^3.3.4",
+    "body-parser": "^1.15.0",
     "colors": "^0.6.2",
     "express": "^4.13.4",
+    "gm": "^1.22.0",
     "multiparty": "^4.1.2",
-    "body-parser": "^1.15.0",
-    "gm": "^1.22.0"
+    "nopt": "^3.0.6"
   },
   "repository": {
     "type": "git",
