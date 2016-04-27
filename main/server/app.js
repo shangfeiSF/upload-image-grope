@@ -73,7 +73,7 @@ app.post('/upload', function (req, res) {
     .then(function (result) {
       return result.pop()
     })
-    .get('files')
+    .get('images')
     .map(function (file) {
       var prefix = hash.gen(file.originalFilename)
       var q = 'q' + quality
@@ -145,8 +145,10 @@ app.get('/index.html', function (req, res) {
   var file = path.join(__dirname, '../pages/index.html')
 
   fs.readFile(file, function (error, data) {
+    var html = data.toString('utf-8')
+    var html = html.replace('{{csrf-token}}', hash.gen(''))
     res.writeHead(200)
-    res.end(data)
+    res.end(html)
   })
 })
 

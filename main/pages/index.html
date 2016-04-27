@@ -2,68 +2,79 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="csrf-token" content="{{csrf-token}}">
     <title>Multiple Image Upload</title>
     <style>
-        input {
-            display: block;
+        #images {
+            float: left;
+            padding: 20px 0 0 20px;
+            width: 360px;
+            min-height: 100px;
+            border: 1px solid #555;
+            margin-bottom: 20px;
         }
 
-        .img-wrap img {
-            width: 200px;
-            height: 200px;
+        #images img {
+            float: left;
+            width: 100px;
+            height: 100px;
             margin-right: 20px;
+            margin-bottom: 20px;
         }
     </style>
     <script type="text/javascript" src="http://localhost:8080/jquery.js"></script>
     <script type="text/javascript" src="http://localhost:8080/underscore.js"></script>
-    <script type="text/javascript" src="http://localhost:8080/upload/upload.js"></script>
+    <script type="text/javascript" src="http://localhost:8080/upload.js"></script>
 </head>
 <body>
 <h2>FormData Submit</h2>
-<form>
-    <input id="J_name" type="text" name="name" value="formdata---1">
-    <input id="J_authority" type="text" name="authority" value="admin">
-    <input id="J_files" type="file" name="files" value="admin" multiple>
-    <input id="J_submit" type="button" value="提交">
-    <div id="J_response"></div>
-</form>
+<div id="images"></div>
+<button id="upload">upload</button>
 <script type="text/javascript">
-    var inputFiles = null
+    var container = $('#images')
 
-    $('#J_files').on('change', function (e) {
-        inputFiles = (this.files && this.files.length) ? this.files : e.target.value
+    var callbacks = {
+        progress: function () {
+            console.info('Uploading....')
+        },
+        completed: function (data) {
+            console.info('Completed All:', data)
+        },
+        change: function (feedback) {
+            console.warn('Update Info', feedback)
+        },
+        success: function (result) {
+            console.info('one step successfully:', result)
+            $.each(result.links, function (i, link) {
+                container.append($('<img>', {
+                    src: link.format ? link.format : link.quality
+                }))
+            })
+        },
+        error: function (error) {
+            console.error('one step failed:', error)
+        }
+    }
+
+    var multipleUploader = new MultipleUploader({
+        container: '#images',
+        name: 'images',
+        action: '/upload',
+        accept: 'image/*',
+        multiple: true,
+        autoSubmit: true,
+        headers: {
+            "X-CSRF-Token": $('meta[name="csrf-token"]').attr('content')
+        },
+        progress: callbacks.progress,
+        completed: callbacks.completed,
+        change: callbacks.change,
+        success: callbacks.success,
+        error: callbacks.error
     })
 
-    $('#J_submit').on('click', function () {
-        if (inputFiles.lentgh == 0) return
-
-        var formData = new FormData()
-        formData.append('name', $('#J_name').val())
-        formData.append('authority', $('#J_authority').val())
-
-        $.each(inputFiles, function (index, file) {
-            formData.append('files', file)
-        })
-
-        $.ajax({
-            type: 'post',
-            url: '/upload/images',
-            contentType: false,
-            processData: false,
-            data: formData,
-            success: function (data) {
-                var linkDoms = $.map(data.links, function (link, index) {
-                    var linkDom = $('<a></a>')
-                    linkDom.addClass('img-wrap')
-                    linkDom.attr('href', link.url)
-                    linkDom.attr('target', '_blank')
-                    linkDom.attr('data-index', index)
-                    linkDom.append($('<img src="' + link.url + '" />'))
-                    return linkDom
-                })
-                $('#J_response').append(linkDoms)
-            }
-        })
+    $('#upload').on('click', function () {
+        multipleUploader.add()
     })
 </script>
 </body>
