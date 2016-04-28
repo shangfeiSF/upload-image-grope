@@ -146,8 +146,6 @@
       var options = self.superior.options
       var config = self.superior.config
 
-      var removedFileIndex = removedFileIndex === undefined ? 'add' : removedFileIndex
-
       self.setSteps()
 
       // offer the update info to custom change
@@ -159,7 +157,11 @@
         filesLength: self.filesMap.length,
         filesSize: +parseFloat(self.filesSize / config.metric.convert).toFixed(2),
         sizeUnit: config.metric.unit,
-        removedFileIndex: removedFileIndex  // add images or the index of image removed form filesMap
+        /*
+         * the index of image removed form filesMap
+         * or removedFileIndex is undefined when add images
+         * */
+        removedFileIndex: removedFileIndex
       })
 
       if (options.autoSubmit) {
@@ -325,11 +327,11 @@
        * and users can remove(MultipleUploader remove) some selected image before confirming to upload images
        * finally users can submit(MultipleUploader submit) and begin to upload images
        * */
-      uploadSizeLimit: 2, // the limit size for uploading once(one image or multiple images)
+      uploadSizeLimit: 5, // the limit size for uploading once(and this is also the limit size of one image )
       headers: null, // the headers of $.ajax config
-      change: null, // the listener of input change, including the change occured when remove images before uploading
       progress: null, // the listener of uploading start
       completed: null, // the listener of all the images uploaded
+      change: null, // the listener of input change, including the change occured when remove images before uploading
       success: null,  // the listener of one post or one $.ajax successfully
       error: null // the listener of one post or one $.ajax failed
     }
@@ -378,7 +380,7 @@
       uploader.filesMap = $.grep(uploader.filesMap, function (file) {
         var result = (fileName !== file.name)
         if (fileName === file.name) {
-          uploader.filesSize -= file.size
+          uploader.filesSize -= file.allow ? file.size : 0
           fileIndex = file.index
         }
         return result
