@@ -4,78 +4,25 @@
     <meta charset="UTF-8">
     <meta name="csrf-token" content="{{csrf-token}}">
     <title>Multiple Image Upload</title>
-    <style>
-        #images {
-            float: left;
-            padding: 20px 0 0 20px;
-            width: 360px;
-            min-height: 100px;
-            border: 1px solid #555;
-            margin-bottom: 20px;
-        }
 
-        #images img {
-            float: left;
-            width: 100px;
-            height: 100px;
-            margin-right: 20px;
-            margin-bottom: 20px;
-        }
-    </style>
-    <script type="text/javascript" src="http://localhost:8080/jquery.js"></script>
-    <script type="text/javascript" src="http://localhost:8080/underscore.js"></script>
-    <script type="text/javascript" src="http://localhost:8080/upload.js"></script>
+    <link rel="stylesheet" href="/pages/index.css">
+
+    <script type="text/javascript" src="/jquery.js"></script>
+    <script type="text/javascript" src="/underscore.js"></script>
+    <script type="text/javascript" src="/upload.js"></script>
 </head>
 <body>
-<h2>FormData Submit</h2>
+
+<h2>Upload image auto</h2>
+<div id="images-auto"></div>
+<button id="upload-auto">upload</button>
+
+<h2>Upload image with preview</h2>
 <div id="images"></div>
-<button id="upload">upload</button>
-<script type="text/javascript">
-    var container = $('#images')
+<button id="add">add</button>
+<button id="upload">submit</button>
 
-    var callbacks = {
-        progress: function () {
-            console.info('Uploading....')
-        },
-        completed: function (data) {
-            console.info('Completed All:', data)
-        },
-        change: function (feedback) {
-            console.warn('Update Info', feedback)
-        },
-        success: function (result) {
-            console.info('one step successfully:', result)
-            $.each(result.links, function (i, link) {
-                container.append($('<img>', {
-                    src: link.format ? link.format : link.quality
-                }))
-            })
-        },
-        error: function (error) {
-            console.error('one step failed:', error)
-        }
-    }
-
-    var multipleUploader = new MultipleUploader({
-        container: '#images',
-        name: 'images',
-        action: '/upload',
-        accept: 'image/*',
-        multiple: true,
-        autoSubmit: true,
-        headers: {
-            "X-CSRF-Token": $('meta[name="csrf-token"]').attr('content')
-        },
-        progress: callbacks.progress,
-        completed: callbacks.completed,
-        change: callbacks.change,
-        success: callbacks.success,
-        error: callbacks.error
-    })
-
-    $('#upload').on('click', function () {
-        multipleUploader.add()
-    })
-</script>
+<script type="text/javascript" src="/pages/index-auto.js"></script>
+<script type="text/javascript" src="/pages/index.js"></script>
 </body>
 </html>
