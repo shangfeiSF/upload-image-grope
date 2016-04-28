@@ -71,15 +71,22 @@ app.post('/upload', function (req, res) {
 
   parseAsync(req)
     .then(function (result) {
-      return result.pop()
+      var scopes = result.shift().scopes
+      var images = result.pop().images
+
+      images.forEach(function(image, index){
+        image.scope = scopes[index]
+      })
+
+      return images
     })
-    .get('images')
     .map(function (file) {
       var prefix = hash.gen(file.originalFilename)
       var q = 'q' + quality
 
       var result = {
         old: file.path,
+        scope: file.scope,
         original: [prefix, file.originalFilename].join('_'),
         quality: [prefix, q, file.originalFilename].join('_')
       }
@@ -100,6 +107,7 @@ app.post('/upload', function (req, res) {
       }
 
       var links = {
+        scope: item.scope,
         original: base + item.original,
         quality: base + item.quality
       }
@@ -141,6 +149,7 @@ app.post('/upload', function (req, res) {
     })
 })
 
+app.use('/pages', express.static('../pages'))
 app.get('/index.html', function (req, res) {
   var file = path.join(__dirname, '../pages/index.html')
 
