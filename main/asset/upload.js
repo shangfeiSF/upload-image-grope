@@ -209,9 +209,9 @@
 
     switch: function () {
       var self = this
-      // finish all the steps, then change the state to fulfiled or rejected
+      // finish all the steps, then change the state to fulfilled or rejected
       if (self.stepSuccessTimes + self.stepErrorTimes == self.steps.length) {
-        self.state = self.stepErrorTimes == 0 ? 'fulfiled' : 'rejected'
+        self.state = self.stepErrorTimes == 0 ? 'fulfilled' : 'rejected'
       }
       // finish one step, then minus one form pendingLength
       self.superior.pendingLength--
@@ -236,13 +236,12 @@
         var step = self.steps[i]
 
         var formData = new FormData()
-        formData.append('_uploader_', 'formdata')
 
         for (var j = 0; j < step.length; j++) {
           var index = step[j]
           formData.append(options.name, self.inputFiles[index])
-          // use scope to distinguish strictly the image(avoiding the same name image in different directory)
-          formData.append('scope', [self.index, index].join('_'))
+          // use scopes to distinguish strictly the image(avoiding the same name image in different directory)
+          formData.append('scopes', [self.index, index].join('_'))
         }
 
         var ajaxConfig = {
