@@ -1,4 +1,5 @@
-(function () {
+(function (win) {
+  var MultipleUploader = win.MultipleUploader
   var container = $('#images-auto')
 
   var callbacks = {
@@ -13,7 +14,9 @@
     },
     success: function (result) {
       console.info('one step successfully:', result)
-      $.each(result.links, function (i, link) {
+      var data = typeof result === 'string' ? JSON.parse(result) : result
+
+      $.each(data.links, function (i, link) {
         container.append($('<img>', {
           src: link.format ? link.format : link.quality
         }))
@@ -45,4 +48,4 @@
   $('#upload-auto').on('click', function () {
     multipleUploader.add()
   })
-})()
+})(window)

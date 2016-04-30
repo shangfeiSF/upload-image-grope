@@ -83,8 +83,9 @@
       this.setDynamicProps(input, dynamicProps)
       input.css({
         outline: 0,
-        cursor: 'pointer'
-      }).hide()
+        cursor: 'pointer',
+        visibility: 'hidden'
+      })
 
       return input
     },
@@ -101,20 +102,38 @@
       var form = $('<form>', aptoticProps)
 
       this.setDynamicProps(form, dynamicProps)
-      form.attr('target', this.formTargetIframe.attr('name')).hide()
+      form.attr('target', this.formTargetIframe.attr('name'))
+
+      var type = this.buildInput({
+        type: 'text',
+        name: 'type',
+        value: 'html'
+      })
+      form.append(type)
 
       return form
     },
 
     bind: function () {
       var self = this
+      var config = self.superior.config
+
       self.input.change(function (e) {
-        // inputFiles caches the FileList Object given by input DOM
-        self.inputFiles = (this.files && this.files.length) ? this.files : e.target.value
-        // build filesMap and calculate filesSize
-        self.census()
-        // calculate steps to upload
-        self.change()
+        if (config.supportFormData) {
+          // inputFiles caches the FileList Object given by input DOM
+          self.inputFiles = (this.files && this.files.length) ? this.files : []
+          // build filesMap and calculate filesSize
+          self.census()
+          // calculate steps to upload
+          self.change()
+        }
+        else {
+          // IE9 and IE9- can not get the file size just by javascript
+          self.inputFiles = e.target.value
+          self.filesMap = self.inputFiles
+          self.filesSize = undefined
+          self.change()
+        }
       })
     },
 
@@ -146,23 +165,37 @@
       var options = self.superior.options
       var config = self.superior.config
 
-      self.setSteps()
-
-      // offer the update info to custom change
-      options.change && options.change({
+      var changeInfo = {
         index: self.index,
         state: self.state,
         inputFiles: self.inputFiles,
         filesMap: self.filesMap,
-        filesLength: self.filesMap.length,
-        filesSize: +parseFloat(self.filesSize / config.metric.convert).toFixed(2),
         sizeUnit: config.metric.unit,
         /*
          * the index of image removed form filesMap
          * or removedFileIndex is undefined when add images
          * */
         removedFileIndex: removedFileIndex
-      })
+      }
+
+      var addition = null
+      if (config.supportFormData) {
+        self.setSteps()
+        addition = {
+          filesLength: self.filesMap.length,
+          filesSize: +parseFloat(self.filesSize / config.metric.convert).toFixed(2)
+        }
+      }
+      else {
+        addition = {
+          filesLength: self.inputFiles.length ? 1 : 0,
+          filesSize: undefined
+        }
+      }
+      _.extend(changeInfo, addition)
+
+      // offer the update info to custom change
+      options.change && options.change(changeInfo)
 
       if (options.autoSubmit) {
         self.superior.submit()
@@ -207,15 +240,28 @@
       }
     },
 
-    switch: function () {
+    transition: function () {
       var self = this
-      // finish all the steps, then change the state to fulfilled or rejected
-      if (self.stepSuccessTimes + self.stepErrorTimes == self.steps.length) {
-        self.state = self.stepErrorTimes == 0 ? 'fulfilled' : 'rejected'
+      var config = self.superior.config
+
+      if (config.supportFormData) {
+        // finish all the steps, then change the state to fulfilled or rejected
+        if (self.stepSuccessTimes + self.stepErrorTimes == self.steps.length) {
+          self.state = self.stepErrorTimes == 0 ? 'fulfilled' : 'rejected'
+        }
+        // finish one step, then minus one form pendingLength
+        self.superior.pendingLength--
+        self.superior.mayCompleted()
+      } else {
+        if (self.stepSuccessTimes) {
+          self.state = 'fulfilled'
+        } else if (self.stepErrorTimes) {
+          self.state = 'rejected'
+        }
+        self.superior.pendingLength = 0
+        self.superior.mayCompleted()
       }
-      // finish one step, then minus one form pendingLength
-      self.superior.pendingLength--
-      self.superior.mayCompleted()
+
     },
 
     submit: function () {
@@ -257,17 +303,15 @@
       }
     },
 
-    // TODO: more test
     uploadIframe: function () {
       var self = this
       $('body').append(self.formTargetIframe)
 
       self.formTargetIframe.one('load', function () {
-        $('<iframe src="javascript:false"></iframe>').appendTo(self.form).remove()
 
         var response = $(this).contents().find('body').html()
 
-        $(this).remove()
+        //$(this).remove()
 
         if (!response) {
           self.error()
@@ -276,6 +320,12 @@
         }
       })
 
+      var scope = self.buildInput({
+        type: 'text',
+        name: 'scopes',
+        value: [self.index, 0].join('_')
+      })
+      self.form.prepend(scope)
       self.form.submit()
     },
 
@@ -286,7 +336,7 @@
       this.superior.submitData.push(data)
 
       options.success && options.success(data)
-      this.switch()
+      this.transition()
     },
 
     error: function (error) {
@@ -295,7 +345,7 @@
       this.stepErrorTimes++
 
       options.error && options.error(error)
-      this.switch()
+      this.transition()
     },
 
     trigger: function () {
@@ -390,19 +440,33 @@
     },
 
     submit: function () {
-      if (this.pendingLength) {
-        if (this.options.progress && typeof this.options.progress === 'function') {
-          this.options.progress()
-        }
-      }
+      var self = this
+      var config = self.config
 
-      this.submitData = []
-      $.each(this.uploaderList, function (i, uploader) {
-        // cancel the selecting will also create a uploader, but its steps is empty
-        if (uploader.state == 'pending' && uploader.steps.length) {
-          uploader.submit()
+      if (config.supportFormData) {
+        if (this.pendingLength) {
+          if (this.options.progress && typeof this.options.progress === 'function') {
+            this.options.progress()
+          }
         }
-      })
+
+        this.submitData = []
+        $.each(this.uploaderList, function (i, uploader) {
+          // cancel the selecting will also create a uploader, but its steps is empty
+          if (uploader.state == 'pending' && uploader.steps.length) {
+            uploader.submit()
+          }
+        })
+      }
+      else {
+        this.submitData = []
+        $.each(this.uploaderList, function (i, uploader) {
+          // cancel the selecting will also create a uploader, but its steps is empty
+          if (uploader.state == 'pending') {
+            uploader.submit()
+          }
+        })
+      }
     },
 
     mayCompleted: function () {

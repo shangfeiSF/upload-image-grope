@@ -1,4 +1,5 @@
-(function () {
+(function (win) {
+  var MultipleUploader = win.MultipleUploader
   var container = $('#images')
 
   var callbacks = {
@@ -75,10 +76,8 @@
 
           var image = target.find('.image')
           image.remove()
-          target.prepend($('<img>', {
-            class: 'image',
-            src: link.format ? link.format : link.original
-          }))
+          image.attr('src', link.format ? link.format : link.original)
+          target.prepend(image)
         }
       })
     },
@@ -131,4 +130,4 @@
     })
     multipleUploader.submit()
   })
-})()
+})(window)

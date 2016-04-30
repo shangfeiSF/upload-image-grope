@@ -58,6 +58,7 @@ if (options.quality && options.quality >= 1 && options.quality <= 100) {
 
 app.use(express.static('../asset'))
 app.use(uploadRouter, express.static(uploadDir))
+app.use('/pages', express.static('../pages'))
 
 app.post('/upload', function (req, res) {
   var form = new multiparty.Form({
@@ -71,10 +72,20 @@ app.post('/upload', function (req, res) {
 
   parseAsync(req)
     .then(function (result) {
-      var scopes = result.shift().scopes
-      var images = result.pop().images
+      console.log(result)
+      var fields = result.shift()
+      var files = result.pop()
 
-      images.forEach(function(image, index){
+      var type = fields.type ? fields.type.pop() : undefined
+      var scopes = fields.scopes
+      var images = files.images
+
+      // this is a hack for loading JSON in IE
+      if (type && type === 'html') {
+        res.type('html')
+      }
+
+      images.forEach(function (image, index) {
         image.scope = scopes[index]
       })
 
@@ -149,7 +160,6 @@ app.post('/upload', function (req, res) {
     })
 })
 
-app.use('/pages', express.static('../pages'))
 app.get('/index.html', function (req, res) {
   var file = path.join(__dirname, '../pages/index.html')
 
