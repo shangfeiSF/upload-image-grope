@@ -18,6 +18,11 @@
 #upload-auto, #upload {
     clear: left;
     display: block;
+    width: 100px;
+    height: 40px;
+    background: red;
+    position: relative;
+    overflow: hidden;
 }
 
 .wrap {
@@ -62,5 +67,10 @@
 #add {
     clear: left;
     display: block;
+    width: 100px;
+    height: 40px;
+    background: red;
+    position: relative;
+    overflow: hidden;
     margin-bottom: 10px;
 }

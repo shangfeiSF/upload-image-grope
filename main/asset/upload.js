@@ -47,21 +47,28 @@
 
       if (config.supportFormData) {
         // use formData to upload
-        this.input.appendTo(options.container)
+        this.input.hide().appendTo(options.container)
       }
       else {
         // use iframe to upload
-        this.formTargetIframe = this.buildIframe({
-          name: 'iframe-uploader-' + iframeCount++
-        })
+        this.formTargetIframe = $('<iframe name="iframe-uploader-' + iframeCount + '"></iframe>')
+        iframeCount++
 
         this.form = this.buildForm({
           method: 'post',
           enctype: 'multipart/form-data'
-        }, ['action'])
+        }, ['action']).hide()
 
-        this.form.append(this.input)
-        this.form.appendTo(options.container)
+        this.form.append()
+        options.addWrapper.css('position', 'relative')
+        this.input.css({
+          position: 'absolute',
+          right: 0,
+          top: 0,
+          'font-size': '100px',
+          filter: 'progid:DXImageTransform.Microsoft.Alpha(Opacity=0)'
+        })
+        this.input.appendTo(options.addWrapper)
       }
     },
 
@@ -83,8 +90,7 @@
       this.setDynamicProps(input, dynamicProps)
       input.css({
         outline: 0,
-        cursor: 'pointer',
-        visibility: 'hidden'
+        cursor: 'pointer'
       })
 
       return input
@@ -187,6 +193,7 @@
         }
       }
       else {
+        self.form.append(self.input)
         addition = {
           filesLength: self.inputFiles.length ? 1 : 0,
           filesSize: undefined
@@ -199,6 +206,8 @@
 
       if (options.autoSubmit) {
         self.superior.submit()
+      } else {
+        self.superior.init()
       }
     },
 
@@ -304,29 +313,34 @@
     },
 
     uploadIframe: function () {
-      var self = this
-      $('body').append(self.formTargetIframe)
+      if (this.form.find('input[name="images"]').length) {
+        var self = this
+        var options = self.superior.options
 
-      self.formTargetIframe.one('load', function () {
+        $('body').append(self.formTargetIframe)
 
-        var response = $(this).contents().find('body').html()
+        self.formTargetIframe.one('load', function () {
 
-        //$(this).remove()
+          var response = $(this).contents().find('body').html()
 
-        if (!response) {
-          self.error()
-        } else {
-          self.success(response)
-        }
-      })
+          $(this).remove()
 
-      var scope = self.buildInput({
-        type: 'text',
-        name: 'scopes',
-        value: [self.index, 0].join('_')
-      })
-      self.form.prepend(scope)
-      self.form.submit()
+          if (!response) {
+            self.error()
+          } else {
+            self.success(response)
+          }
+        })
+
+        var scope = self.buildInput({
+          type: 'text',
+          name: 'scopes',
+          value: [self.index, 0].join('_')
+        })
+        this.form.appendTo(options.container)
+        self.form.prepend(scope)
+        self.form.submit()
+      }
     },
 
     success: function (data) {
@@ -349,7 +363,14 @@
     },
 
     trigger: function () {
-      this.input.trigger('click')
+      var self = this
+      var config = self.superior.config
+
+      if (config.supportFormData) {
+        this.input.trigger('click')
+      }
+      else {
+      }
     }
   })
 
@@ -362,6 +383,7 @@
     }
 
     options.container = $(options.container)
+    options.addWrapper = $(options.addWrapper)
 
     this.options = {
       container: null, // the root DOM for uploading image
@@ -376,6 +398,7 @@
        * and users can remove(MultipleUploader remove) some selected image before confirming to upload images
        * finally users can submit(MultipleUploader submit) and begin to upload images
        * */
+      addWrapper: null,
       uploadSizeLimit: 5, // the limit size for uploading once(and this is also the limit size of one image )
       headers: null, // the headers of $.ajax config
       progress: null, // the listener of uploading start
@@ -409,6 +432,13 @@
   }
 
   _.extend(MultipleUploader.prototype, {
+    init: function () {
+      var index = iframeCount
+      var uploader = new Uploader(index, this)
+
+      this.uploaderList.push(uploader)
+    },
+
     add: function () {
       // index is the order of adding action
       var index = this.uploaderList.length
@@ -474,6 +504,9 @@
         if (this.options.completed && typeof this.options.completed === 'function') {
           this.options.completed(this.submitData)
         }
+      }
+      if (this.config.autoSubmit) {
+        this.init()
       }
     }
   })

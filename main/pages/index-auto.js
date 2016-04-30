@@ -14,7 +14,7 @@
     },
     success: function (result) {
       console.info('one step successfully:', result)
-      var data = typeof result === 'string' ? JSON.parse(result) : result
+      var data = typeof result === 'string' ? $.parseJSON(result) : result
 
       $.each(data.links, function (i, link) {
         container.append($('<img>', {
@@ -34,6 +34,7 @@
     accept: 'image/*',
     multiple: true,
     autoSubmit: true,
+    addWrapper: '#upload-auto',
     uploadSizeLimit: 0.7,
     headers: {
       "X-CSRF-Token": $('meta[name="csrf-token"]').attr('content')
@@ -45,7 +46,12 @@
     error: callbacks.error
   })
 
-  $('#upload-auto').on('click', function () {
-    multipleUploader.add()
-  })
+  if (win.FormData) {
+    $('#upload-auto').on('click', function () {
+      multipleUploader.add()
+    })
+  } else {
+    multipleUploader.init()
+  }
+
 })(window)
