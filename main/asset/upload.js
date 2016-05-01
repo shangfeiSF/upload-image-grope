@@ -6,6 +6,7 @@
       return new Uploader(index)
     }
 
+    this.formTargetIframePrefix = 'iframe-uploader-'
     this.superior = superior // access options and config in MultipleUploader instance form superior
     this.index = index //  index is the order of adding action
     /*
@@ -28,8 +29,8 @@
      * the FileList Object can not be handled, so using the filesMap to manage the queue for uploading
      * actually when users remove images to upload, the images removed will be popped form filesMap
      * */
-    this.filesMap = []
-    this.filesSize = 0 // the total size of images in filesMap
+    this.filesMap = undefined
+    this.filesSize = undefined // the total size of images in filesMap
 
     this.render()
     this.bind()
@@ -37,38 +38,49 @@
 
   _.extend(Uploader.prototype, {
     render: function () {
-      var options = this.superior.options
-      var config = this.superior.config
+      var self = this
+      var superior = self.superior
 
-      this.input = this.buildInput({
+      var options = superior.options
+      var config = superior.config
+
+      self.input = self.buildInput({
         type: 'file',
         hidefocus: true
       }, ['name', 'accept', 'multiple'])
 
       if (config.supportFormData) {
         // use formData to upload
-        this.input.hide().appendTo(options.container)
+        self.input.hide().appendTo(options.container)
       }
       else {
         // use iframe to upload
-        this.formTargetIframe = $('<iframe name="iframe-uploader-' + iframeCount + '"></iframe>')
-        iframeCount++
+        self.formTargetIframe = $('<iframe name="' + self.formTargetIframePrefix + iframeCount++ + '"></iframe>').hide()
 
-        this.form = this.buildForm({
+        self.form = self.buildForm({
           method: 'post',
           enctype: 'multipart/form-data'
         }, ['action']).hide()
 
-        this.form.append()
-        options.addWrapper.css('position', 'relative')
-        this.input.css({
+        self.form.append(
+          self.buildInput({
+            type: 'text',
+            name: 'type',
+            value: 'html'
+          })
+        )
+
+        self.input.css({
           position: 'absolute',
           right: 0,
           top: 0,
           'font-size': '100px',
           filter: 'progid:DXImageTransform.Microsoft.Alpha(Opacity=0)'
         })
-        this.input.appendTo(options.addWrapper)
+
+        options.trigger
+          .css('position', 'relative')
+          .append(self.input)
       }
     },
 
@@ -77,11 +89,10 @@
 
       var options = this.superior.options
 
-      for (var i = 0, len = dynamicProps.length; i < len; i++) {
-        var prop = dynamicProps[i]
+      $.each(dynamicProps, function (i, prop) {
         var value = options[prop]
         value && (dom.attr(prop, value))
-      }
+      })
     },
 
     buildInput: function (aptoticProps, dynamicProps) {
@@ -96,64 +107,44 @@
       return input
     },
 
-    buildIframe: function (aptoticProps, dynamicProps) {
-      var iframe = $('<iframe>', aptoticProps)
-
-      this.setDynamicProps(iframe, dynamicProps)
-
-      return iframe
-    },
-
     buildForm: function (aptoticProps, dynamicProps) {
       var form = $('<form>', aptoticProps)
 
       this.setDynamicProps(form, dynamicProps)
       form.attr('target', this.formTargetIframe.attr('name'))
 
-      var type = this.buildInput({
-        type: 'text',
-        name: 'type',
-        value: 'html'
-      })
-      form.append(type)
-
       return form
     },
 
     bind: function () {
       var self = this
-      var config = self.superior.config
 
       self.input.change(function (e) {
-        if (config.supportFormData) {
-          // inputFiles caches the FileList Object given by input DOM
-          self.inputFiles = (this.files && this.files.length) ? this.files : []
-          // build filesMap and calculate filesSize
-          self.census()
-          // calculate steps to upload
-          self.change()
-        }
-        else {
-          // IE9 and IE9- can not get the file size just by javascript
-          self.inputFiles = e.target.value
-          self.filesMap = self.inputFiles
-          self.filesSize = undefined
-          self.change()
-        }
+        // inputFiles caches the FileList Object given by input DOM or the file path in IE7-IE9
+        self.inputFiles = (this.files && this.files.length) ? this.files : e.target.value
+
+        self.census()
+
+        self.change()
       })
     },
 
     census: function () {
       var self = this
-      var options = self.superior.options
-      var config = self.superior.config
+      var superior = self.superior
 
-      var files = self.inputFiles
-      for (var i = 0, len = files.length; i < len; i++) {
-        var file = files[i]
+      var options = superior.options
+      var config = superior.config
+
+      if (!config.supportFormData) return null
+
+      self.filesMap = new Array()
+      self.filesSize = 0
+      $.each(self.inputFiles, function (i, file) {
         // the unit of file.size is B, and the unit of uploadSizeLimit is MB
         // metric.convert is 1024 * 1024
         var allow = file.size < options.uploadSizeLimit * config.metric.convert
+
         // If file.size is beyond the uploadSizeLimit, this file will not be uploaded
         self.filesSize += allow ? file.size : 0
 
@@ -163,127 +154,128 @@
           size: file.size,
           allow: allow
         })
-      }
+      })
     },
 
     change: function (removedFileIndex) {
       var self = this
-      var options = self.superior.options
-      var config = self.superior.config
+      var superior = self.superior
+
+      var options = superior.options
+      var config = superior.config
 
       var changeInfo = {
         index: self.index,
         inputFiles: self.inputFiles,
         filesMap: self.filesMap,
         sizeUnit: config.metric.unit,
-        /*
-         * the index of image removed form filesMap
-         * or removedFileIndex is undefined when add images
-         * */
-        removedFileIndex: removedFileIndex
+        removedFileIndex: removedFileIndex  // removedFileIndex is undefined when add images especially
       }
 
-      var addition = null
+      _.extend(changeInfo, self.addition(removedFileIndex))
+
+      options.change && options.change(changeInfo)
+
+      if (removedFileIndex === undefined) {
+        if (options.autoSubmit) {
+          superior.submit()
+        } else {
+          superior.init()
+        }
+      }
+    },
+
+    addition: function (removedFileIndex) {
+      var self = this
+      var superior = self.superior
+
+      var config = superior.config
+
       if (config.supportFormData) {
         self.setSteps()
-        addition = {
+
+        return {
           state: self.state,
           filesLength: self.filesMap.length,
           filesSize: +parseFloat(self.filesSize / config.metric.convert).toFixed(2)
         }
       }
       else {
+        superior.counter.pendings += removedFileIndex === undefined ? 1 : -1
         if (removedFileIndex === undefined) {
-          self.superior.pendingLength++
           self.form.append(self.input)
-
-          addition = {
-            state: self.state,
-            filesLength: self.inputFiles.length ? 1 : 0,
-            filesSize: undefined
-          }
         } else {
           self.state = 'rejected'
-          self.superior.pendingLength--
-
-          addition = {
-            state: self.state,
-            filesLength: 0,
-            filesSize: undefined
-          }
         }
-      }
-      _.extend(changeInfo, addition)
 
-      // offer the update info to custom change
-      options.change && options.change(changeInfo)
-
-      if (removedFileIndex === undefined) {
-        if (options.autoSubmit) {
-          self.superior.submit()
-        } else {
-          self.superior.init()
+        return {
+          state: self.state,
+          filesLength: removedFileIndex === undefined ? 1 : 0,
+          filesSize: self.filesSize
         }
       }
     },
 
     setSteps: function () {
       var self = this
-      var options = self.superior.options
-      var config = self.superior.config
+      var superior = self.superior
+
+      var options = superior.options
+      var config = superior.config
       var limit = options.uploadSizeLimit * config.metric.convert
 
-      // reset self.steps and minus self.steps form pendingLength
-      self.superior.pendingLength -= self.steps.length
+      // reset self.steps and minus self.steps
+      superior.counter.steps -= self.steps.length
+      self.steps = []
+
       var filesAllow = $.grep(self.filesMap, function (file) {
         return file.allow
       })
-      self.steps = []
 
       if (!filesAllow.length) {
         self.state = 'rejected'
-        self.superior.pendingLength -= self.steps.length
-      } else {
+        superior.counter.steps -= self.steps.length
+      }
+      else {
         self.steps.push([])
         var sum = 0
 
-        for (var i = 0, len = filesAllow.length; i < len; i++) {
-          var file = filesAllow[i]
-
+        $.each(filesAllow, function (i, file) {
           if (sum + file.size > limit) {
             // add new step, reset sum to 0
             self.steps.push([file.index])
             sum = file.size
-          } else {
+          }
+          else {
             // append file.index to the last step in self.steps, add file.size to sum
             self.steps[self.steps.length - 1].push(file.index)
             sum += file.size
           }
-        }
+        })
 
-        self.superior.pendingLength += self.steps.length
+        superior.counter.steps += self.steps.length
       }
     },
 
     transition: function () {
       var self = this
-      var config = self.superior.config
+      var superior = self.superior
+
+      var config = superior.config
 
       if (config.supportFormData) {
         // finish all the steps, then change the state to fulfilled or rejected
         if (self.stepSuccessTimes + self.stepErrorTimes == self.steps.length) {
           self.state = self.stepErrorTimes == 0 ? 'fulfilled' : 'rejected'
         }
-      } else {
-        if (self.stepSuccessTimes) {
-          self.state = 'fulfilled'
-        } else if (self.stepErrorTimes) {
-          self.state = 'rejected'
-        }
+        superior.counter.steps--
       }
-      // finish one step, then minus one form pendingLength
-      self.superior.pendingLength--
-      self.superior.mayCompleted()
+      else {
+        self.state = self.stepErrorTimes == 0 ? 'fulfilled' : 'rejected'
+        superior.counter.pendings--
+      }
+
+      superior.mayCompleted()
     },
 
     submit: function () {
@@ -296,21 +288,20 @@
 
     uploadFormData: function () {
       var self = this
-      var options = self.superior.options
-      var config = self.superior.config
+      var superior = self.superior
+
+      var options = superior.options
+      var config = superior.config
 
       // upload all the images one by one step
-      for (var i = 0, len = self.steps.length; i < len; i++) {
-        var step = self.steps[i]
-
+      $.each(self.steps, function (i, step) {
         var formData = new FormData()
 
-        for (var j = 0; j < step.length; j++) {
-          var index = step[j]
+        $.each(step, function (j, index) {
           formData.append(options.name, self.inputFiles[index])
           // use scopes to distinguish strictly the image(avoiding the same name image in different directory)
           formData.append('scopes', [self.index, index].join('_'))
-        }
+        })
 
         var ajaxConfig = {
           data: formData,
@@ -322,38 +313,43 @@
         _.extend(ajaxConfig, config.ajaxConfig)
 
         $.ajax(ajaxConfig)
-      }
+      })
     },
 
     uploadIframe: function () {
-      if (this.form.find('input[name="images"]').length) {
-        var self = this
-        var options = self.superior.options
+      var self = this
+      var superior = self.superior
 
-        $('body').append(self.formTargetIframe)
+      var options = superior.options
 
-        self.formTargetIframe.one('load', function () {
+      var selector = 'input[name="' + options.name + '"]'
+      if (!self.form.find(selector).length) return null
 
-          var response = $(this).contents().find('body').html()
+      $('body').append(self.formTargetIframe)
 
-          $(this).remove()
+      self.formTargetIframe.one('load', function () {
+        var response = $(this).contents().find('body').html()
 
-          if (!response) {
-            self.error()
-          } else {
-            self.success(response)
-          }
-        })
+        $(this).remove()
 
-        var scope = self.buildInput({
+        if (!response.length) {
+          self.error()
+        } else {
+          self.success(response)
+        }
+      })
+
+      self.form.prepend(
+        self.buildInput({
           type: 'text',
           name: 'scopes',
           value: [self.index, 0].join('_')
         })
-        this.form.appendTo(options.container)
-        self.form.prepend(scope)
-        self.form.submit()
-      }
+      )
+
+      self.form.appendTo(options.container)
+
+      self.form.submit()
     },
 
     success: function (data) {
@@ -379,11 +375,7 @@
       var self = this
       var config = self.superior.config
 
-      if (config.supportFormData) {
-        this.input.trigger('click')
-      }
-      else {
-      }
+      config.supportFormData && self.input.trigger('click')
     }
   })
 
@@ -395,11 +387,9 @@
       return new MultipleUploader(options)
     }
 
-    options.container = $(options.container)
-    options.addWrapper = $(options.addWrapper)
-
     this.options = {
       container: null, // the root DOM for uploading image
+      trigger: null, // MultipleUploader need a trigger to add or submit
       name: null, // this name will be set as the name of input DOM when using formData to upload images
       action: null, // the value of form-action or the url of $.ajax config
       accept: null, // the value of input-accept attribute
@@ -411,7 +401,6 @@
        * and users can remove(MultipleUploader remove) some selected image before confirming to upload images
        * finally users can submit(MultipleUploader submit) and begin to upload images
        * */
-      addWrapper: null,
       uploadSizeLimit: 5, // the limit size for uploading once(and this is also the limit size of one image )
       headers: null, // the headers of $.ajax config
       progress: null, // the listener of uploading start
@@ -420,6 +409,9 @@
       success: null,  // the listener of one post or one $.ajax successfully
       error: null // the listener of one post or one $.ajax failed
     }
+
+    options.container = $(options.container)
+    options.trigger = $(options.trigger)
 
     _.extend(this.options, options)
 
@@ -440,76 +432,92 @@
     }
 
     this.uploaderList = [] // the array of Uploader instances
-    this.pendingLength = 0 // the sum of all the steps in each uploader
     this.submitData = [] // the final data which merges all the result
+
+    this.counter = {
+      steps: 0, // the sum of all the steps in each uploader(formData)
+      pendings: 0 // the sum of all the pending uploaders(IE7-IE9)
+    }
   }
 
   _.extend(MultipleUploader.prototype, {
     init: function () {
-      var index = this.uploaderList.length
-      var uploader = new Uploader(index, this)
+      var self = this
+      var options = self.options
+      var config = self.config
 
-      this.uploaderList.push(uploader)
+      if (config.supportFormData) {
+        options.trigger.on('click', function () {
+          self.add(true)
+        })
+      }
+      else {
+        self.add(false)
+      }
     },
 
-    add: function () {
+    add: function (trigger) {
       // index is the order of adding action
       var index = this.uploaderList.length
       var uploader = new Uploader(index, this)
 
       this.uploaderList.push(uploader)
 
-      // open the system Interface for selecting images(trigger the click evnet of input)
-      uploader.trigger()
+      trigger && uploader.trigger()
     },
 
-    remove: function (fileName, index) {
-      // fileName is the name of image expected to remove
-      // index is the scope of the image(avoiding the same name image in different directory)
-      var uploader = this.uploaderList[index]
-      var fileIndex = null
+    remove: function (index, fileName) {
+      var self = this
+      var config = self.config
 
-      if (this.config.supportFormData) {
+      var removedFileIndex = null
+      var uploader = this.uploaderList[index]
+
+      if (config.supportFormData) {
+        // fileName is the name of image expected to remove
+        // index is the scope of the image(avoiding the same name image in different directory)
         uploader.filesMap = $.grep(uploader.filesMap, function (file) {
           var result = (fileName !== file.name)
+
           if (fileName === file.name) {
             uploader.filesSize -= file.allow ? file.size : 0
-            fileIndex = file.index
+            removedFileIndex = file.index
           }
+
           return result
         })
-      } else {
-        fileIndex = 0
+      }
+      else {
+        // IE7-IE9
+        removedFileIndex = 0
       }
 
-      // handle the fileMaps
-      uploader.change(fileIndex)
+      uploader.change(removedFileIndex)
     },
 
     submit: function () {
       var self = this
       var config = self.config
 
-      if (config.supportFormData) {
-        if (this.pendingLength) {
-          if (this.options.progress && typeof this.options.progress === 'function') {
-            this.options.progress()
-          }
+      if (self.counter.steps || self.counter.pendings) {
+        if (this.options.progress && typeof this.options.progress === 'function') {
+          this.options.progress()
         }
+      }
 
-        this.submitData = []
+      self.submitData = []
+      if (config.supportFormData) {
         $.each(this.uploaderList, function (i, uploader) {
-          // cancel the selecting will also create a uploader, but its steps is empty
+          // cancel the selecting will also create a uploader, but its steps is empty(formData)
           if (uploader.state == 'pending' && uploader.steps.length) {
             uploader.submit()
           }
         })
       }
       else {
-        this.submitData = []
         $.each(this.uploaderList, function (i, uploader) {
-          // cancel the selecting will also create a uploader, but its steps is empty
-          if (uploader.state == 'pending') {
+          // cancel the selecting will also create a uploader, but its steps is empty(IE7-IE9)
+          if (uploader.state == 'pending' && uploader.inputFiles !== null) {
             uploader.submit()
           }
         })
@@ -517,14 +525,17 @@
     },
 
     mayCompleted: function () {
-      if (this.pendingLength == 0) {
-        if (this.options.completed && typeof this.options.completed === 'function') {
-          this.options.completed(this.submitData)
+      var self = this
+      var options = self.options
+      var config = self.config
+      
+      if ((config.supportFormData && self.counter.steps == 0) || self.counter.pendings == 0) {
+        if (options.completed && typeof options.completed === 'function') {
+          options.completed(this.submitData)
         }
       }
-      if (this.config.autoSubmit) {
-        this.init()
-      }
+
+      config.autoSubmit && self.init()
     }
   })
 
