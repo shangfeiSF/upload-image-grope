@@ -1,4 +1,4 @@
-(function (win, $, _) {
+(function (win, $) {
   var iframeCount = 0
 
   function Uploader(index, superior) {
@@ -36,7 +36,7 @@
     this.bind()
   }
 
-  _.extend(Uploader.prototype, {
+  $.extend(Uploader.prototype, {
     render: function () {
       var self = this
       var superior = self.superior
@@ -46,7 +46,8 @@
 
       self.input = self.buildInput({
         type: 'file',
-        hidefocus: true
+        hidefocus: true,
+        'data-index': self.index
       }, ['name', 'accept', 'multiple'])
 
       if (config.supportFormData) {
@@ -172,16 +173,13 @@
         removedFileIndex: removedFileIndex  // removedFileIndex is undefined when add images especially
       }
 
-      _.extend(changeInfo, self.addition(removedFileIndex))
+      $.extend(changeInfo, self.addition(removedFileIndex))
 
       options.change && options.change(changeInfo)
 
       if (removedFileIndex === undefined) {
-        if (options.autoSubmit) {
-          superior.submit()
-        } else {
-          superior.init()
-        }
+        options.autoSubmit && superior.submit()
+        !config.supportFormData && superior.add(false)
       }
     },
 
@@ -310,7 +308,7 @@
           error: self.error
         }
 
-        _.extend(ajaxConfig, config.ajaxConfig)
+        $.extend(ajaxConfig, config.ajaxConfig)
 
         $.ajax(ajaxConfig)
       })
@@ -413,7 +411,7 @@
     options.container = $(options.container)
     options.trigger = $(options.trigger)
 
-    _.extend(this.options, options)
+    $.extend(this.options, options)
 
     this.config = {
       metric: {
@@ -440,7 +438,7 @@
     }
   }
 
-  _.extend(MultipleUploader.prototype, {
+  $.extend(MultipleUploader.prototype, {
     init: function () {
       var self = this
       var options = self.options
@@ -528,8 +526,8 @@
       var self = this
       var options = self.options
       var config = self.config
-      
-      if ((config.supportFormData && self.counter.steps == 0) || self.counter.pendings == 0) {
+
+      if ((config.supportFormData && self.counter.steps == 0) || (!config.supportFormData && self.counter.pendings == 0)) {
         if (options.completed && typeof options.completed === 'function') {
           options.completed(this.submitData)
         }
@@ -540,4 +538,4 @@
   })
 
   win.MultipleUploader = MultipleUploader
-})(window, $, _)
+})(window, $)
