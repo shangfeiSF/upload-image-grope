@@ -72,7 +72,6 @@ app.post('/upload', function (req, res) {
 
   parseAsync(req)
     .then(function (result) {
-      console.log(result)
       var fields = result.shift()
       var files = result.pop()
 
