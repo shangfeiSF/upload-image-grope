@@ -74,3 +74,18 @@
     overflow: hidden;
     margin-bottom: 10px;
 }
+
+
+.item {
+    position: relative;
+    overflow: hidden;
+}
+
+.delete {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 21px;
+    height: 24px;
+    background: url(http://localhost:8080/images/remove.jpg) no-repeat 0 0;
+}

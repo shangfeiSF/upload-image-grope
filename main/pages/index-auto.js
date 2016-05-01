@@ -29,12 +29,12 @@
 
   var multipleUploader = new MultipleUploader({
     container: '#images-auto',
+    trigger: '#upload-auto',
     name: 'images',
     action: '/upload',
     accept: 'image/*',
     multiple: true,
     autoSubmit: true,
-    addWrapper: '#upload-auto',
     uploadSizeLimit: 0.7,
     headers: {
       "X-CSRF-Token": $('meta[name="csrf-token"]').attr('content')
@@ -46,12 +46,7 @@
     error: callbacks.error
   })
 
-  if (win.FormData) {
-    $('#upload-auto').on('click', function () {
-      multipleUploader.add()
-    })
-  } else {
-    multipleUploader.init()
-  }
+  multipleUploader.init()
 
+  win.test = multipleUploader
 })(window)

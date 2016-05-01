@@ -60,7 +60,32 @@
           })
         }
       } else {
+        if (feedback.removedFileIndex !== undefined) {
+          var scope = [feedback.index, feedback.removedFileIndex].join('_')
 
+          $.each(container.find('.item'), function (i, item) {
+            var item = $(item)
+            item.data('scope') === scope && item.remove()
+          })
+        }
+        else {
+          var filePath = feedback.inputFiles
+
+          var item = $('<div class="item">')
+          item.data('scope', [feedback.index, 0].join('_'))
+          item.data('state', 'pending')
+
+          var remove = $('<i  class="delete"></i>')
+          remove.data('index', feedback.index)
+          remove.data('name', filePath)
+          item.append(remove)
+
+          var content = $('<div class="filePath">')
+          content.html(filePath)
+
+          item.append(content)
+          container.append(item)
+        }
       }
     },
     success: function (result) {
@@ -82,6 +107,7 @@
             var image = target.find('.image')
             image.remove()
             image.attr('src', link.format ? link.format : link.original)
+            image.removeClass('loading')
             target.prepend(image)
           }
         })
@@ -94,12 +120,12 @@
 
   var multipleUploader = new MultipleUploader({
     container: '#images',
+    trigger: '#add',
     name: 'images',
     action: '/upload',
     accept: 'image/*',
     multiple: true,
     autoSubmit: false,
-    addWrapper: '#add',
     uploadSizeLimit: 0.7,
     headers: {
       "X-CSRF-Token": $('meta[name="csrf-token"]').attr('content')
@@ -111,24 +137,26 @@
     error: callbacks.error
   })
 
+  multipleUploader.init()
+
   container.on('click', function (e) {
     var target = $(e.target)
-    if (target.hasClass('remove')) {
+    if (target.hasClass('remove') || target.hasClass('delete')) {
       var index = target.data('index')
       var name = target.data('name')
 
-      multipleUploader.remove(name, index)
+      multipleUploader.remove(index, name)
     }
   })
 
-  if (win.FormData) {
-    $('#add').on('click', function () {
-      multipleUploader.add()
-    })
-  } else {
-    multipleUploader.init()
-  }
-  
+  // if (win.FormData) {
+  //   $('#add').on('click', function () {
+  //     multipleUploader.add()
+  //   })
+  // } else {
+  //   multipleUploader.init()
+  // }
+
   $('#upload').on('click', function () {
     var wraps = container.find('.wrap')
 
