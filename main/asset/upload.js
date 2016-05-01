@@ -173,7 +173,6 @@
 
       var changeInfo = {
         index: self.index,
-        state: self.state,
         inputFiles: self.inputFiles,
         filesMap: self.filesMap,
         sizeUnit: config.metric.unit,
@@ -188,15 +187,30 @@
       if (config.supportFormData) {
         self.setSteps()
         addition = {
+          state: self.state,
           filesLength: self.filesMap.length,
           filesSize: +parseFloat(self.filesSize / config.metric.convert).toFixed(2)
         }
       }
       else {
-        self.form.append(self.input)
-        addition = {
-          filesLength: self.inputFiles.length ? 1 : 0,
-          filesSize: undefined
+        if (removedFileIndex === undefined) {
+          self.superior.pendingLength++
+          self.form.append(self.input)
+
+          addition = {
+            state: self.state,
+            filesLength: self.inputFiles.length ? 1 : 0,
+            filesSize: undefined
+          }
+        } else {
+          self.state = 'rejected'
+          self.superior.pendingLength--
+
+          addition = {
+            state: self.state,
+            filesLength: 0,
+            filesSize: undefined
+          }
         }
       }
       _.extend(changeInfo, addition)
@@ -204,10 +218,12 @@
       // offer the update info to custom change
       options.change && options.change(changeInfo)
 
-      if (options.autoSubmit) {
-        self.superior.submit()
-      } else {
-        self.superior.init()
+      if (removedFileIndex === undefined) {
+        if (options.autoSubmit) {
+          self.superior.submit()
+        } else {
+          self.superior.init()
+        }
       }
     },
 
@@ -258,19 +274,16 @@
         if (self.stepSuccessTimes + self.stepErrorTimes == self.steps.length) {
           self.state = self.stepErrorTimes == 0 ? 'fulfilled' : 'rejected'
         }
-        // finish one step, then minus one form pendingLength
-        self.superior.pendingLength--
-        self.superior.mayCompleted()
       } else {
         if (self.stepSuccessTimes) {
           self.state = 'fulfilled'
         } else if (self.stepErrorTimes) {
           self.state = 'rejected'
         }
-        self.superior.pendingLength = 0
-        self.superior.mayCompleted()
       }
-
+      // finish one step, then minus one form pendingLength
+      self.superior.pendingLength--
+      self.superior.mayCompleted()
     },
 
     submit: function () {
@@ -433,7 +446,7 @@
 
   _.extend(MultipleUploader.prototype, {
     init: function () {
-      var index = iframeCount
+      var index = this.uploaderList.length
       var uploader = new Uploader(index, this)
 
       this.uploaderList.push(uploader)
@@ -454,16 +467,20 @@
       // fileName is the name of image expected to remove
       // index is the scope of the image(avoiding the same name image in different directory)
       var uploader = this.uploaderList[index]
-
       var fileIndex = null
-      uploader.filesMap = $.grep(uploader.filesMap, function (file) {
-        var result = (fileName !== file.name)
-        if (fileName === file.name) {
-          uploader.filesSize -= file.allow ? file.size : 0
-          fileIndex = file.index
-        }
-        return result
-      })
+
+      if (this.config.supportFormData) {
+        uploader.filesMap = $.grep(uploader.filesMap, function (file) {
+          var result = (fileName !== file.name)
+          if (fileName === file.name) {
+            uploader.filesSize -= file.allow ? file.size : 0
+            fileIndex = file.index
+          }
+          return result
+        })
+      } else {
+        fileIndex = 0
+      }
 
       // handle the fileMaps
       uploader.change(fileIndex)
