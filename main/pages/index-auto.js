@@ -45,8 +45,8 @@
     success: callbacks.success,
     error: callbacks.error
   })
-
-  multipleUploader.init()
-
-  win.test = multipleUploader
+  
+  multipleUploader.init(function () {
+    console.log(multipleUploader)
+  })
 })(window)

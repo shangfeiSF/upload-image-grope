@@ -439,17 +439,21 @@
   }
 
   $.extend(MultipleUploader.prototype, {
-    init: function () {
+    init: function (before) {
       var self = this
       var options = self.options
       var config = self.config
 
       if (config.supportFormData) {
         options.trigger.on('click', function () {
+          before && before()
           self.add(true)
         })
       }
       else {
+        options.trigger.on('click', function () {
+          before && before()
+        })
         self.add(false)
       }
     },

@@ -137,7 +137,9 @@
     error: callbacks.error
   })
 
-  multipleUploader.init()
+  multipleUploader.init(function () {
+    console.log(multipleUploader)
+  })
 
   container.on('click', function (e) {
     var target = $(e.target)
@@ -148,14 +150,6 @@
       multipleUploader.remove(index, name)
     }
   })
-
-  // if (win.FormData) {
-  //   $('#add').on('click', function () {
-  //     multipleUploader.add()
-  //   })
-  // } else {
-  //   multipleUploader.init()
-  // }
 
   $('#upload').on('click', function () {
     var wraps = container.find('.wrap')
