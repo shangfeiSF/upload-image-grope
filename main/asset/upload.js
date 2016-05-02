@@ -122,10 +122,14 @@
 
       self.input.change(function (e) {
         // inputFiles caches the FileList Object given by input DOM or the file path in IE7-IE9
-        self.inputFiles = (this.files && this.files.length) ? this.files : e.target.value
+        if (this.files && this.files.length) {
+          self.inputFiles = this.files
+        } else {
+          this.select()
+          self.inputFiles = win.document.selection.createRange().text
+        }
 
         self.census()
-
         self.change()
       })
     },

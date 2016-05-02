@@ -1,6 +1,6 @@
 (function (win) {
   var MultipleUploader = win.MultipleUploader
-  var container = $('#images-auto')
+  var container = $('#images')
 
   var callbacks = {
     progress: function () {
@@ -14,12 +14,16 @@
     },
     success: function (result) {
       console.info('one step successfully:', result)
+
       var data = typeof result === 'string' ? $.parseJSON(result) : result
 
       $.each(data.links, function (i, link) {
-        container.append($('<img>', {
-          src: link.format ? link.format : link.quality
-        }))
+        var img = $('<img>')
+
+        img.addClass('image')
+        img.attr('src', link.format ? link.format : link.quality)
+        
+        container.append(img)
       })
     },
     error: function (error) {
@@ -28,8 +32,8 @@
   }
 
   var multipleUploader = new MultipleUploader({
-    container: '#images-auto',
-    trigger: '#upload-auto',
+    container: '#images',
+    trigger: '#submit',
     name: 'images',
     action: '/upload',
     accept: 'image/*',
@@ -45,8 +49,9 @@
     success: callbacks.success,
     error: callbacks.error
   })
-  
+
   multipleUploader.init(function () {
     console.log(multipleUploader)
   })
+
 })(window)
