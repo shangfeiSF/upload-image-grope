@@ -1,6 +1,6 @@
 (function (win) {
   var MultipleUploader = win.MultipleUploader
-  var container = $('#images')
+  var container = $('#preview')
 
   var callbacks = {
     progress: function () {
@@ -59,7 +59,8 @@
             container.append(wrap)
           })
         }
-      } else {
+      }
+      else {
         if (feedback.removedFileIndex !== undefined) {
           var scope = [feedback.index, feedback.removedFileIndex].join('_')
 
@@ -72,6 +73,9 @@
           var filePath = feedback.inputFiles
 
           var item = $('<div class="item">')
+            .css('display', 'none')
+            .appendTo(container)
+
           item.data('scope', [feedback.index, 0].join('_'))
           item.data('state', 'pending')
 
@@ -80,10 +84,8 @@
           remove.data('name', filePath)
           item.append(remove)
 
-          var content = $('<div class="filePath">')
-          content.html(filePath)
-
-          item.append(content)
+          item[0].filters.item('DXImageTransform.Microsoft.AlphaImageLoader').src = filePath
+          item.css('display', 'block')
           container.append(item)
         }
       }
@@ -91,12 +93,11 @@
     success: function (result) {
       console.info('one step successfully:', result)
 
-      if (win.FormData) {
-        var links = result.links
-        var wraps = container.find('.wrap')
+      var data = typeof result === 'string' ? $.parseJSON(result) : result
 
-        $.each(links, function (i, link) {
-          var target = $.grep(wraps, function (wrap) {
+      if (win.FormData) {
+        $.each(data.links, function (i, link) {
+          var target = $.grep(container.find('.wrap'), function (wrap) {
             return $(wrap).data('scope') === link.scope
           })
 
@@ -109,7 +110,27 @@
             image.attr('src', link.format ? link.format : link.original)
             image.removeClass('loading')
             target.prepend(image)
+            target.append($('<div class="success">'))
           }
+        })
+      }
+      else {
+        $.each(data.links, function (i, link) {
+          var target = $.grep(container.find('.item'), function (wrap) {
+            return $(wrap).data('scope') === link.scope
+          })
+
+          if (target.length === 1) {
+            var target = $(target.pop())
+            target.data('state', 'fulfilled')
+            target.attr('data-src', link.format ? link.format : link.original)
+
+            target[0].filters.item('DXImageTransform.Microsoft.AlphaImageLoader').src = link.format ? link.format : link.original
+
+            console.log(target[0].filters.item('DXImageTransform.Microsoft.AlphaImageLoader').src)
+            target.append($('<div class="success">'))
+          }
+
         })
       }
     },
@@ -119,7 +140,7 @@
   }
 
   var multipleUploader = new MultipleUploader({
-    container: '#images',
+    container: '#preview',
     trigger: '#add',
     name: 'images',
     action: '/upload',
@@ -152,14 +173,18 @@
   })
 
   $('#upload').on('click', function () {
-    var wraps = container.find('.wrap')
-
-    var pends = $.grep(wraps, function (wrap) {
+    var wraps = $.grep(container.find('.wrap'), function (wrap) {
       return $(wrap).data('state') === 'pending'
     })
 
-    $.each(pends, function (i, allow) {
-      $(allow).find('.image').addClass('loading').attr('src', 'http://localhost:8080/images/loading.gif')
+    $.each(wraps, function (i, wrap) {
+      if (win.formData) {
+        $(wrap).find('.image')
+          .addClass('loading')
+          .attr('src', 'http://localhost:8080/images/loading.gif')
+      } else {
+      }
+
     })
     multipleUploader.submit()
   })

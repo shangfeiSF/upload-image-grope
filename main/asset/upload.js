@@ -120,11 +120,12 @@
     bind: function () {
       var self = this
 
-      self.input.change(function (e) {
+      self.input.change(function () {
         // inputFiles caches the FileList Object given by input DOM or the file path in IE7-IE9
         if (this.files && this.files.length) {
           self.inputFiles = this.files
         } else {
+          // get the file path in IE7 and IE8
           this.select()
           self.inputFiles = win.document.selection.createRange().text
         }

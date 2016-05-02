@@ -101,3 +101,12 @@
     cursor: pointer;
     background: url(http://localhost:8080/images/remove.jpg) no-repeat 0 0;
 }
+
+#preview .item .success {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 10px;
+    height: 10px;
+    background: green;
+}
