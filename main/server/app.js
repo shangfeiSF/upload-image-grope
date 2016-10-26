@@ -170,6 +170,36 @@ app.get('/index.html', function (req, res) {
   })
 })
 
+app.get('/demo.html', function (req, res) {
+  var file = path.join(__dirname, '../pages/demo.html')
+
+  fs.readFile(file, function (error, data) {
+    var html = data.toString('utf-8')
+    res.writeHead(200)
+    res.end(html)
+  })
+})
+
+app.get('/slotmachine.html', function (req, res) {
+  var file = path.join(__dirname, '../pages/slotmachine.html')
+
+  fs.readFile(file, function (error, data) {
+    var html = data.toString('utf-8')
+    res.writeHead(200)
+    res.end(html)
+  })
+})
+
+app.get('/slotmachine.original.html', function (req, res) {
+  var file = path.join(__dirname, '../pages/slotmachine.original.html')
+
+  fs.readFile(file, function (error, data) {
+    var html = data.toString('utf-8')
+    res.writeHead(200)
+    res.end(html)
+  })
+})
+
 app.listen(port, function () {
   console.log('[Server] -- listening localhost:8080....'.green)
   if (options.format) {

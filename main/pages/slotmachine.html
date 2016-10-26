@@ -1,0 +1,158 @@
+<!doctype html>
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+        <title>Slot Machine</title>
+
+        <script type="text/javascript" src="/zepto.js"></script>
+        <script type="text/javascript" src="/jquery.js"></script>
+
+        <script type="text/javascript" src="/slotmachine.js"></script>
+        <link rel="stylesheet" href="pages/slotmachine.css">
+
+        <script type="text/javascript">
+            function onComplete(result) {
+                var MAP = [9, 8, 7, 6, 5, 4, 3, 2, 1, 0]
+                console.warn('id ---', result.node.attr('id'))
+                console.log('index ---', result.active.index)
+                console.debug('value ---', MAP[result.active.index])
+                console.info(result.machine)
+            }
+            var SlotMachine = window.SlotMachine
+        </script>
+    </head>
+    <body>
+        <div class="floor">
+            <div id="machine_1" class="machine"></div>
+            <div id="machine_2" class="machine"></div>
+            <div id="machine_3" class="machine"></div>
+            <div id="go" class="button">GO!</div>
+        </div>
+
+        <div class="floor">
+            <div id="machine_4" class="machine"></div>
+            <div id="machine_5" class="machine"></div>
+            <div id="machine_6" class="machine"></div>
+            <div id="shuffle" class="button">Shuffle!</div>
+            <div id="stop" class="button">Stop!</div>
+        </div>
+
+        <div class="floor">
+            <div id="prev" class="button">DOWN</div>
+            <div id="machine_7" class="machine" style="margin-left: 50px;"></div>
+            <div id="next" class="button">UP</div>
+        </div>
+
+        <script type="text/javascript">
+            var machine1 = new SlotMachine('#machine_1', {
+                origin: 0,
+                delay: 500,
+                times: 6,
+                finals: [0, 1]
+            })
+            var machine2 = new SlotMachine('#machine_2', {
+                origin: 1,
+                delay: 800,
+                times: 4,
+                finals: [2, 3]
+            })
+            var machine3 = new SlotMachine('#machine_3', {
+                origin: 2,
+                delay: 1100,
+                times: 3,
+                finals: [4, 5]
+            })
+
+            machine1.start({
+                auto: false,
+                position: true
+            }, onComplete)
+            machine2.start({
+                auto: false,
+                position: true
+            }, onComplete)
+            machine3.start({
+                auto: false,
+                position: true
+            }, onComplete)
+
+            $('#go').click(function () {
+                machine1.shuffle(onComplete)
+                machine2.shuffle(onComplete)
+                machine3.shuffle(onComplete)
+            })
+        </script>
+
+        <script type="text/javascript">
+            var machine4 = new SlotMachine('#machine_4', {
+                origin: 3,
+                delay: 500,
+                speed: 100,
+                shake: false,
+                finals: [3, 4]
+            })
+            var machine5 = new SlotMachine('#machine_5', {
+                origin: 4,
+                delay: 600,
+                speed: 120,
+                shake: true,
+                finals: [5, 6]
+            })
+            var machine6 = new SlotMachine('#machine_6', {
+                origin: 5,
+                delay: 700,
+                speed: 140,
+                shake: true,
+                finals: [7, 8]
+            })
+
+            machine4.start({
+                position: true
+            })
+            machine5.start({
+                position: true
+            })
+            machine6.start({
+                position: true
+            })
+
+            $('#shuffle').click(function () {
+                if (machine4.isRunning() || machine5.isRunning() || machine6.isRunning()) {
+                    return false
+                }
+                machine4.shuffle(onComplete)
+                machine5.shuffle(onComplete)
+                machine6.shuffle(onComplete)
+            })
+            $('#stop').click(function () {
+                if (machine4.isRunning()) {
+                    machine4.stop()
+                }
+                else {
+                    if (machine5.isRunning()) {
+                        machine5.stop()
+                    }
+                    else {
+                        machine6.isRunning() && machine6.stop()
+                    }
+                }
+            })
+        </script>
+
+        <script type="text/javascript">
+            var machine7 = new SlotMachine('#machine_7', {
+                origin: 9,
+                delay: 200,
+                speed: 400
+            })
+            machine7.start()
+
+            $('#prev').click(function () {
+                machine7.prev(onComplete)
+            })
+            $('#next').click(function () {
+                machine7.next(onComplete)
+            })
+        </script>
+    </body>
+</html>
