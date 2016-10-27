@@ -24,6 +24,7 @@
 
   $.extend(SlotMachine.prototype,
     {
+      // properties
       defaultConfig: {
         origin: 0,
         delay: 0,
@@ -40,6 +41,7 @@
       }
     },
     {
+      // utils
       _isVisible: function () {
         var self = this
 
@@ -106,6 +108,32 @@
           onCompleted && onCompleted()
         })
 
+      },
+
+      _reviseBackgroundPositionY: function () {
+        this.nodes.machine.css(
+          'background-position-y',
+          -(this.active.index * this.params.height) + this.params.unit
+        )
+      },
+    },
+    {
+      // auxiliary methods
+      _boot: function (position) {
+        var self = this
+
+        var machine = self.nodes.machine
+
+        var params = machine.css('height').match(self.params.pattern)
+
+        self.params.unit = params.pop()
+        self.params.height = +parseFloat(params.pop()).toFixed(2)
+
+        position && machine.css('background-position-y',
+          (+parseFloat(machine.css('background-position-y')) - parseFloat(self.config.origin * self.params.height)) + self.params.unit
+        )
+
+        machine.css("overflow", "hidden")
       },
 
       _roll: function (times, onCompleted) {
@@ -182,6 +210,9 @@
           multiple: multiple
         }, function () {
           self.active = random
+
+          self._reviseBackgroundPositionY()
+
           self.states.running = false
           self.states.forceStop = false
 
@@ -193,8 +224,10 @@
             active: self.active
           })
         })
-      },
-
+      }
+    },
+    {
+      // update this.active
       _prevPosition: function () {
         return {
           index: (this.active.index + 1) > 9 ? 0 : (this.active.index + 1),
@@ -227,24 +260,7 @@
       }
     },
     {
-      boot: function (position) {
-        var self = this
-
-        var machine = self.nodes.machine
-
-        var params = machine.css('height').match(self.params.pattern)
-
-        self.params.unit = params.pop()
-        self.params.height = +parseFloat(params.pop()).toFixed(2)
-
-        position && machine.css('background-position-y',
-          +parseFloat(machine.css('background-position-y')) - parseFloat(self.config.origin * self.params.height)
-        )
-
-        machine
-          .css("overflow", "hidden")
-      },
-
+      // APIs
       isRunning: function () {
         return this.states.running
       },
@@ -302,7 +318,7 @@
 
         var config = config || {}
 
-        self.boot(config.position)
+        self._boot(config.position)
 
         config.auto && self.shuffle(onCompleted)
       }

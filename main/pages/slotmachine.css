@@ -49,6 +49,18 @@ body {
     border-top: 20px dotted #A48E4E;
 }
 
+.font40 {
+    font-size: 40px;
+}
+
+.font30 {
+    font-size: 30px;
+}
+
+.font18 {
+    font-size: 18px;
+}
+
 .button {
     width: 100px;
     height: 100px;
@@ -78,15 +90,18 @@ body {
 }
 
 .machine {
-    width: 64px;
-    height: 86.6px;
-    overflow: hidden;
-    display: inline-block;
-    text-align: center;
-    border: 5px solid #000;
-    background-image: url(http://strip.alicdn.com/L1/377/828/9uWMcceLVU04.png);
+    background-image: url(http://strip.alicdn.com/L1/377/967/1zE8prai4SwA.png);
     background-size: 100% auto;
     background-repeat: repeat-y;
     background-position-x: 0px;
     background-position-y: 0px;
+    border: 5px solid #000;
+    display: inline-block;
+    text-align: center;
+    overflow: hidden;
+}
+
+.px {
+    width: 64px;
+    height: 90px;
 }

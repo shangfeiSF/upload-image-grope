@@ -15,32 +15,46 @@
                 var MAP = [9, 8, 7, 6, 5, 4, 3, 2, 1, 0]
                 console.warn('id ---', result.node.attr('id'))
                 console.log('index ---', result.active.index)
-                console.debug('value ---', MAP[result.active.index])
+                console.log('value ---', MAP[result.active.index])
                 console.info(result.machine)
             }
             var SlotMachine = window.SlotMachine
         </script>
     </head>
     <body>
-        <div class="floor">
-            <div id="machine_1" class="machine"></div>
-            <div id="machine_2" class="machine"></div>
-            <div id="machine_3" class="machine"></div>
+        <div class="floor font40">
+            <div id="machine_1" class="machine" style="width: 3.2em; height: 4.5em;"></div>
+            <div id="machine_2" class="machine px"></div>
+            <div id="machine_3" class="machine px"></div>
             <div id="go" class="button">GO!</div>
         </div>
 
-        <div class="floor">
-            <div id="machine_4" class="machine"></div>
-            <div id="machine_5" class="machine"></div>
-            <div id="machine_6" class="machine"></div>
+        <div class="floor font30">
+            <div id="machine_4" class="machine" style="width: 3.2em; height: 4.5em;"></div>
+            <div id="machine_5" class="machine px"></div>
+            <div id="machine_6" class="machine px"></div>
             <div id="shuffle" class="button">Shuffle!</div>
             <div id="stop" class="button">Stop!</div>
         </div>
 
-        <div class="floor">
-            <div id="prev" class="button">DOWN</div>
-            <div id="machine_7" class="machine" style="margin-left: 50px;"></div>
-            <div id="next" class="button">UP</div>
+        <div class="floor font18">
+            <div id="down" class="button">DOWN</div>
+            <div id="machine_7" class="machine" style="width: 3.2em; height: 4.5em; margin-left: 50px;"></div>
+            <div id="up" class="button">UP</div>
+        </div>
+
+        <div class="floor font18">
+            <div id="test_block" class="machine px"></div>
+            <div id="test_go" class="button">UP</div>
+            <script>
+                $("#test_go").click(function () {
+                    $("#test_block").animate({
+                        'width': "160px",
+                        'height': "225px",
+                        'backgroundPositionY': '-225px'
+                    }, 1000);
+                });
+            </script>
         </div>
 
         <script type="text/javascript">
@@ -48,7 +62,7 @@
                 origin: 0,
                 delay: 500,
                 times: 6,
-                finals: [0, 1]
+                finals: [2, 3, 4, 5, 6, 7, 8]
             })
             var machine2 = new SlotMachine('#machine_2', {
                 origin: 1,
@@ -77,6 +91,9 @@
             }, onComplete)
 
             $('#go').click(function () {
+                if (machine1.isRunning() || machine2.isRunning() || machine3.isRunning()) {
+                    return false
+                }
                 machine1.shuffle(onComplete)
                 machine2.shuffle(onComplete)
                 machine3.shuffle(onComplete)
@@ -145,12 +162,14 @@
                 delay: 200,
                 speed: 400
             })
-            machine7.start()
+            machine7.start({
+                position: true
+            })
 
-            $('#prev').click(function () {
+            $('#down').click(function () {
                 machine7.prev(onComplete)
             })
-            $('#next').click(function () {
+            $('#up').click(function () {
                 machine7.next(onComplete)
             })
         </script>
